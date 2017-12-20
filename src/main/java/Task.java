@@ -13,32 +13,35 @@ class Task {
      * @param root - starting directory
      */
     static void filesUp(Path root) throws IOException {
-        removeAllFilesToRoot(root);
-        deleteAllChildrenDirectories(root);
+        removeAllFilesInTreeToRoot(root);
+        deleteAllDirectories(root);
     }
 
-    private static void removeAllFilesToRoot(Path root) throws IOException {
-            Files.walk(root)
-                    .filter(path -> Files.isRegularFile(path))
-                    .forEach(file -> {
-                        try {
-                            Files.copy(file, Paths.get(root.toString() + File.separator + file.getFileName()), StandardCopyOption.REPLACE_EXISTING);
-                            Files.delete(file);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-    }
-
-    private static void deleteAllChildrenDirectories(Path root) throws IOException {
+    private static void removeAllFilesInTreeToRoot(Path root) throws IOException {
         Files.walk(root)
-                .filter(path -> Files.isDirectory(path))
-                .forEach(directory -> {
+                .filter(path -> Files.isRegularFile(path))
+                .filter(file -> !file.getParent().equals(root))
+                .forEach(file -> {
                     try {
-                        Files.delete(directory);
+                        Files.copy(file, Paths.get(root.toString() + File.separator + file.getFileName()),
+                                StandardCopyOption.REPLACE_EXISTING);
+                        Files.deleteIfExists(file);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 });
+    }
+
+    private static void deleteAllDirectories(Path root) throws IOException {
+        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                if (!dir.equals(root)) {
+                    Files.deleteIfExists(dir);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+
     }
 }
