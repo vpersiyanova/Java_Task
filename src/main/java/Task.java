@@ -1,4 +1,6 @@
-import java.nio.file.Path;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
 
 class Task {
     /**
@@ -10,9 +12,33 @@ class Task {
      *
      * @param root - starting directory
      */
-    static void filesUp(Path root) {
-        // code here
+    static void filesUp(Path root) throws IOException {
+        removeAllFilesToRoot(root);
+        deleteAllChildrenDirectories(root);
     }
 
-    // code here
+    private static void removeAllFilesToRoot(Path root) throws IOException {
+            Files.walk(root)
+                    .filter(path -> Files.isRegularFile(path))
+                    .forEach(file -> {
+                        try {
+                            Files.copy(file, Paths.get(root.toString() + File.separator + file.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+                            Files.delete(file);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+    }
+
+    private static void deleteAllChildrenDirectories(Path root) throws IOException {
+        Files.walk(root)
+                .filter(path -> Files.isDirectory(path))
+                .forEach(directory -> {
+                    try {
+                        Files.delete(directory);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+    }
 }
